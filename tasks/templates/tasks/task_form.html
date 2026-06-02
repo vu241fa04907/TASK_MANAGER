@@ -1,0 +1,13 @@
+{% extends 'tasks/base.html' %}
+
+{% block content %}
+<h2>{{ title }}</h2>
+<form method="post" class="form-card task-form">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <div class="form-actions">
+        <button type="submit" class="button">Save</button>
+        <a href="{% url 'dashboard' %}" class="button button-secondary">Cancel</a>
+    </div>
+</form>
+{% endblock %}

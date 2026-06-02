@@ -1,0 +1,97 @@
+{% extends 'tasks/base.html' %}
+
+{% block content %}
+<div class="dashboard-hero">
+    <div>
+        <h2>Year Planner</h2>
+        <p>Browse the selected calendar year and inspect each date in detail.</p>
+        <form method="get" class="calendar-filter">
+            <label for="year">Select year</label>
+            <select id="year" name="year" class="calendar-year-select" onchange="this.form.submit()">
+                {% for year in year_options %}
+                    <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>{{ year }}</option>
+                {% endfor %}
+            </select>
+        </form>
+        <div class="progress-panel">
+            <span>Year range</span>
+            <small>{{ selected_year }} only</small>
+            <span>Tasks due</span>
+            <small>{{ due_this_year }} tasks this year</small>
+        </div>
+    </div>
+    <a class="button" href="{% url 'dashboard' %}">Back to Dashboard</a>
+</div>
+<section class="selected-day-card">
+    <div>
+        <h3>Selected date</h3>
+        <p class="selected-day-name">{{ selected_date|date:"l" }}</p>
+        <p class="selected-day-date">{{ selected_date|date:"F j, Y" }}</p>
+    </div>
+    <div>
+        <span class="badge badge-deadline">{{ day_count }} total days</span>
+        <span class="badge badge-status">Year {{ selected_year }}</span>
+    </div>
+</section>
+
+{% if overdue %}
+    <section class="alert alert-danger">
+        <h3>Past Due Tasks</h3>
+        <ul>
+            {% for task in overdue %}
+                <li><strong>{{ task.title }}</strong> — due {{ task.due_date }} {% if task.category %}({{ task.category }}){% endif %}</li>
+            {% endfor %}
+        </ul>
+    </section>
+{% endif %}
+
+<section class="info-card">
+    <h3>Year calendar overview</h3>
+    <p>Scroll through months and spot which dates have tasks assigned. Each day card highlights due date, weekday, and any task count.</p>
+</section>
+
+<div class="year-grid">
+    {% for month in year_months %}
+        <article class="calendar-card month-card">
+            <div class="calendar-card-header">
+                <h3>{{ month.month_label }} {{ month.year }}</h3>
+                <span>{{ month.days|length }} days</span>
+            </div>
+            <ul class="month-day-list">
+                {% for day in month.days %}
+                    <li class="calendar-day {% if day.date == selected_date %}selected-day{% endif %} {% if day.date == today %}today-day{% endif %} {% if day.tasks %}has-task expandable{% endif %}" data-date="{{ day.date }}" data-day="{{ day.label }}" tabindex="0" aria-label="{{ day.date }} {{ day.label }}{% if day.tasks %}, has {{ day.tasks|length }} task{% endif %}">
+                        <div class="day-heading">
+                            <strong>{{ day.date|date:"d" }}</strong>
+                            <span>{{ day.label }}</span>
+                        </div>
+                        {% if day.tasks %}
+                            <div class="day-tasks">
+                                <span class="badge badge-deadline">{{ day.tasks|length }} task{% if day.tasks|length != 1 %}s{% endif %}</span>
+                                <div class="day-task-preview">
+                                    {% for task in day.tasks|slice:":2" %}
+                                        <span class="task-chip">{{ task.title|truncatechars:20 }}</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="calendar-day-detail">
+                                <h4>Tasks for {{ day.date|date:"F j" }}</h4>
+                                <ul>
+                                    {% for task in day.tasks %}
+                                        <li class="day-task-detail-item">
+                                            <strong>{{ task.title }}</strong>
+                                            {% if task.category %}<span class="badge badge-category">{{ task.category }}</span>{% endif %}
+                                            <span class="badge badge-priority-{{ task.priority|lower }}">{{ task.get_priority_display }}</span>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% else %}
+                            <div class="day-empty">No tasks</div>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+        </article>
+    {% endfor %}
+</div>
+{% endblock %}

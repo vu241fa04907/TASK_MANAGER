@@ -1,0 +1,167 @@
+{% extends 'tasks/base.html' %}
+
+{% block content %}
+<div class="dashboard-hero">
+    <div>
+        <div class="hero-heading-row">
+            <h2>Welcome, {{ user.username }}</h2>
+            <span class="pulse-chip{% if reminders %} active{% endif %}" title="{% if reminders %}You have {{ reminders|length }} active reminder{% if reminders|length != 1 %}s{% endif %}.{% else %}No reminder notifications currently pending.{% endif %}">{% if reminders %}Live · {{ reminders|length }} reminder{% if reminders|length != 1 %}s{% endif %}{% else %}Idle{% endif %}</span>
+        </div>
+        <p>Track your tasks, deadlines, and priorities in one place.</p>
+        <div class="progress-panel">
+            <span>Completion</span>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: {{ completion_rate }}%;"></div>
+            </div>
+            <small>{{ completed_count }} / {{ total_count }} tasks completed</small>
+        </div>
+    </div>
+    <div class="hero-actions">
+        <a class="button" href="{% url 'calendar' %}">View Calendar</a>
+        <a class="button" href="{% url 'task_create' %}">Add New Task</a>
+    </div>
+</div>
+
+<form method="get" class="filter-bar">
+    <div class="filter-row filter-search">
+        <label for="q">Search tasks</label>
+        <input id="q" name="q" type="search" placeholder="Search title or description" value="{{ search_query }}">
+    </div>
+    <div class="filter-row">
+        <label for="status">Status</label>
+        <select id="status" name="status">
+            <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All</option>
+            <option value="open" {% if status_filter == 'open' %}selected{% endif %}>Open</option>
+            <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
+        </select>
+    </div>
+    <div class="filter-row">
+        <label for="priority">Priority</label>
+        <select id="priority" name="priority">
+            <option value="all" {% if priority_filter == 'all' %}selected{% endif %}>All</option>
+            <option value="high" {% if priority_filter == 'high' %}selected{% endif %}>High</option>
+            <option value="medium" {% if priority_filter == 'medium' %}selected{% endif %}>Medium</option>
+            <option value="low" {% if priority_filter == 'low' %}selected{% endif %}>Low</option>
+        </select>
+    </div>
+    <div class="filter-row">
+        <label for="category">Category</label>
+        <select id="category" name="category">
+            <option value="all" {% if category_filter == 'all' %}selected{% endif %}>All</option>
+            {% for category in category_list %}
+                <option value="{{ category }}" {% if category_filter == category %}selected{% endif %}>{{ category }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="filter-row">
+        <label for="sort">Sort by</label>
+        <select id="sort" name="sort">
+            <option value="recent" {% if sort_by == 'recent' %}selected{% endif %}>Newest</option>
+            <option value="due" {% if sort_by == 'due' %}selected{% endif %}>Due date</option>
+            <option value="priority" {% if sort_by == 'priority' %}selected{% endif %}>Priority</option>
+        </select>
+    </div>
+    <div class="filter-row">
+        <label for="view">View</label>
+        <select id="view" name="view">
+            <option value="standard" {% if view_mode == 'standard' %}selected{% endif %}>Standard</option>
+            <option value="compact" {% if view_mode == 'compact' %}selected{% endif %}>Compact</option>
+        </select>
+    </div>
+    <button type="submit" class="button">Apply</button>
+</form>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <h3>High Priority</h3>
+        <p class="stat-value" data-target="{{ priority_counts.High }}">0</p>
+    </div>
+    <div class="stat-card">
+        <h3>Medium Priority</h3>
+        <p class="stat-value" data-target="{{ priority_counts.Medium }}">0</p>
+    </div>
+    <div class="stat-card">
+        <h3>Low Priority</h3>
+        <p class="stat-value" data-target="{{ priority_counts.Low }}">0</p>
+    </div>
+</div>
+
+{% if reminders %}
+    <section class="alert alert-info">
+        <h3>Reminder Notifications</h3>
+        <ul>
+            {% for task in reminders %}
+                <li><strong>{{ task.title }}</strong> — reminder set for {{ task.reminder_date }}{% if task.due_date %}, due {{ task.due_date }}{% endif %}</li>
+            {% endfor %}
+        </ul>
+    </section>
+{% endif %}
+
+{% if overdue %}
+    <section class="alert alert-danger">
+        <h3>Overdue Tasks</h3>
+        <ul>
+            {% for task in overdue %}
+                <li>{{ task.title }} — due {{ task.due_date }}</li>
+            {% endfor %}
+        </ul>
+    </section>
+{% endif %}
+
+{% if due_soon %}
+    <section class="alert alert-warning">
+        <h3>Deadline Soon</h3>
+        <ul>
+            {% for task in due_soon %}
+                <li>{{ task.title }} — due {{ task.due_date }}</li>
+            {% endfor %}
+        </ul>
+    </section>
+{% endif %}
+
+<section class="task-grid{% if view_mode == 'compact' %} compact-view{% endif %}">
+    {% if tasks %}
+        {% for task in tasks %}
+            <article class="task-card {% if task.completed %}completed-card{% elif task.is_due_soon %}due-soon-card{% endif %}">
+                <div class="task-card-main">
+                    <div>
+                        <h3>{{ task.title }}</h3>
+                        <p class="task-meta">{{ task.description|default:'No description provided.' }}</p>
+                        <div class="task-tags">
+                            {% if task.category %}
+                                <span class="badge badge-category">{{ task.category }}</span>
+                            {% endif %}
+                            <span class="badge badge-{{ task.priority }}">{{ task.get_priority_display }}</span>
+                            <span class="badge badge-deadline">Due: {{ task.due_date|default:'No deadline' }}</span>
+                            <span class="badge badge-status {% if task.completed %}badge-completed{% endif %}">{{ task.completed|yesno:'Completed,Open' }}</span>
+                            {% for tag in task.tags.all %}
+                                <span class="badge badge-tag">#{{ tag.name }}</span>
+                            {% endfor %}
+                        </div>
+                        {% if task.subtasks.exists %}
+                        <div class="subtask-list">
+                            <h4>Checklist</h4>
+                            <ul>
+                                {% for subtask in task.subtasks.all %}
+                                    <li class="subtask-item {% if subtask.completed %}subtask-completed{% endif %}">
+                                        <a class="subtask-toggle" href="{% url 'subtask_toggle_status' subtask.pk %}">{% if subtask.completed %}☑{% else %}☐{% endif %}</a>
+                                        {{ subtask.title }}
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="task-actions">
+                        <a class="tiny-button" href="{% url 'task_toggle_status' task.pk %}">{% if task.completed %}Reopen{% else %}Complete{% endif %}</a>
+                        <a class="tiny-button" href="{% url 'task_update' task.pk %}">Edit</a>
+                        <a class="tiny-button delete" href="{% url 'task_delete' task.pk %}">Delete</a>
+                    </div>
+                </div>
+            </article>
+        {% endfor %}
+    {% else %}
+        <p class="empty-state">No tasks matched your current filters. Adjust search, status, or priority to find tasks.</p>
+    {% endif %}
+</section>
+{% endblock %}

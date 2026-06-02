@@ -1,0 +1,13 @@
+{% extends 'tasks/base.html' %}
+
+{% block content %}
+<h2>Create Account</h2>
+<form method="post" class="form-card register-form">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <div class="form-actions">
+        <button type="submit" class="button">Register</button>
+        <a href="{% url 'login' %}">Already have an account?</a>
+    </div>
+</form>
+{% endblock %}

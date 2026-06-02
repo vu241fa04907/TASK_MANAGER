@@ -1,0 +1,115 @@
+{% extends 'tasks/base.html' %}
+
+{% block content %}
+<section class="hero-card">
+    {% if user.is_authenticated %}
+        <h2>Welcome back, {{ user.username }}!</h2>
+        <p>Your task dashboard is ready. From here you can manage priorities, deadlines, and complete tasks.</p>
+        <div class="form-actions">
+            <a class="button" href="{% url 'dashboard' %}">Open Dashboard</a>
+            <a class="button button-secondary" href="{% url 'logout' %}">Logout</a>
+        </div>
+    {% else %}
+        <h2>Organize your tasks with ease</h2>
+        <p>Track priorities, deadlines, and completion status in a simple Django dashboard.</p>
+        <div class="form-actions">
+            <a class="button" href="{% url 'register' %}">Create Account</a>
+            <a class="button button-secondary" href="{% url 'login' %}">Login</a>
+        </div>
+    {% endif %}
+</section>
+
+{% if user.is_authenticated %}
+<section class="promo-grid">
+    <article class="promo-card">
+        <img src="https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=800&q=80" alt="Organize tasks">
+        <div>
+            <h3>Organize like a pro</h3>
+            <p>Quickly group your tasks into meaningful categories and manage every deadline.</p>
+        </div>
+    </article>
+    <article class="promo-card">
+        <img src="https://images.unsplash.com/photo-1516251193007-45ef944ab0c6?auto=format&fit=crop&w=800&q=80" alt="Work flow">
+        <div>
+            <h3>Smart productivity</h3>
+            <p>Turn your todo list into productivity flow with reminders, priorities, and progress tracking.</p>
+        </div>
+    </article>
+    <article class="promo-card">
+        <img src="https://images.unsplash.com/photo-1485217988980-11786ced9454?auto=format&fit=crop&w=800&q=80" alt="Analytics">
+        <div>
+            <h3>Insightful view</h3>
+            <p>Get instant visibility into your completed, overdue, and upcoming work.</p>
+        </div>
+    </article>
+</section>
+<section class="overview-grid">
+    <div class="stat-card">
+        <h3>Total Tasks</h3>
+        <p>{{ tasks.count }}</p>
+    </div>
+    <div class="stat-card">
+        <h3>Overdue</h3>
+        <p>{{ overdue.count }}</p>
+    </div>
+    <div class="stat-card">
+        <h3>Due Soon</h3>
+        <p>{{ due_soon|length }}</p>
+    </div>
+</section>
+<section class="info-card">
+    <h3>Quick task status</h3>
+    <ul>
+        <li>High priority: {{ priority_counts.High }}</li>
+        <li>Medium priority: {{ priority_counts.Medium }}</li>
+        <li>Low priority: {{ priority_counts.Low }}</li>
+    </ul>
+</section>
+{% if category_counts %}
+<section class="info-card">
+    <h3>Category summary</h3>
+    <ul>
+        {% for item in category_counts|slice:":4" %}
+            <li>{{ item.category|default:'Uncategorized' }}: {{ item.count }}</li>
+        {% endfor %}
+    </ul>
+</section>
+{% endif %}
+{% if reminders %}
+<section class="alert alert-info">
+    <h3>Reminder Notifications</h3>
+    <ul>
+        {% for task in reminders %}
+            <li><strong>{{ task.title }}</strong> — reminder set for {{ task.reminder_date }}{% if task.due_date %}, due {{ task.due_date }}{% endif %}</li>
+        {% endfor %}
+    </ul>
+</section>
+{% endif %}
+<section class="info-card home-task-preview">
+    <h3>Open tasks preview</h3>
+    {% if tasks %}
+        <ul class="home-task-list">
+            {% for task in tasks|slice:":3" %}
+                <li>
+                    <strong>{{ task.title }}</strong>
+                    <span>{{ task.get_priority_display }} priority</span>
+                    <span>• due {{ task.due_date|default:'No deadline' }}</span>
+                </li>
+            {% endfor %}
+        </ul>
+        <p class="note">Open the dashboard for full task management.</p>
+    {% else %}
+        <p>No task data yet. Add your first task from the dashboard.</p>
+    {% endif %}
+</section>
+{% endif %}
+
+<section class="info-card">
+    <h3>Why use Task Manager?</h3>
+    <ul>
+        <li>Manage tasks from a responsive dashboard.</li>
+        <li>Set deadlines and priority levels.</li>
+        <li>Mark tasks complete and stay productive.</li>
+    </ul>
+</section>
+{% endblock %}
