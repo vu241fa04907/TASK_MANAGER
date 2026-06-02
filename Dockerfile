@@ -8,6 +8,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
+RUN chmod +x start.sh
+
 EXPOSE 10000
 
-CMD ["gunicorn", "task_manager.wsgi:application", "--bind", "0.0.0.0:10000"]
+CMD ["./start.sh"]
